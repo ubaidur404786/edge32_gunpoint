@@ -25,33 +25,9 @@ purpose of the project is the correctness of the path from PyTorch to the microc
 
 ## Architecture: from the dataset to the ESP32-S3
 
-Three columns, left to right: train on the PC, convert and verify on the PC, deploy and prove on the board. Every box is one script or one artifact of this repository; every number was measured.
+Three columns, left to right: train on the PC, convert and verify on the PC, deploy and prove on the board. Every box is one script or one artifact of this repository; every number was measured. (Diagrams: `docs/architecture.svg`, `docs/on_device.svg`.)
 
-```mermaid
-flowchart LR
-    subgraph P1["1. Train  (PC, PyTorch)"]
-        direction TB
-        A["GunPoint TSV<br/>50 train / 150 test"] --> B["dataset.py<br/>split 40 / 10"]
-        B --> C["model.py<br/>CNN, 1586 params"]
-        C --> D["train.py<br/>TEST once: 0.7733"]
-        D --> E["model_fp32.pt"]
-    end
-    subgraph P2["2. Convert and verify  (PC, TFLite)"]
-        direction TB
-        F["ONNX -> onnx2tf<br/>SavedModel"] --> G["model_fp32.tflite<br/>10092 B"]
-        G --> H["model_int8.tflite<br/>6496 B, int8 in/out"]
-        H --> I["pc_inference.py<br/>pc_predictions.csv"]
-    end
-    subgraph P3["3. Deploy and prove  (ESP32-S3)"]
-        direction TB
-        J["export_arduino.py<br/>model_data.h, test_data.h"] --> K["arduino-cli<br/>compile / upload"]
-        K --> L["TFLM on ESP32-S3<br/>logs/run_full.txt"]
-        L --> M["compare.py<br/>150/150 - PASS"]
-    end
-    E --> F
-    H --> J
-    I --> M
-```
+<img src="docs/architecture.svg" alt="Pipeline: 1. train on the PC with PyTorch, 2. convert and verify on the PC with TFLite, 3. deploy and prove on the ESP32-S3" width="958">
 
 ### What happens on the ESP32-S3
 
@@ -59,22 +35,7 @@ The board never sees Python, PyTorch or TensorFlow. It holds two byte arrays com
 its firmware (the 6496-byte `.tflite` model and the test samples) and the TensorFlow Lite
 Micro runtime from the Chirale_TensorFLowLite 2.0.0 Arduino library.
 
-```mermaid
-flowchart LR
-    subgraph S["Setup, once"]
-        direction TB
-        a["SHA-256 of model in flash<br/>== export? else #ERROR"] --> b["op resolver<br/>5 op types"]
-        b --> c["interpreter + arena<br/>3404 B used"]
-        c --> d["read scale / zero-point<br/>from the model"]
-    end
-    subgraph R["Per sample, x 150"]
-        direction TB
-        e["quantize floats<br/>lrintf(x / scale) + zp"] --> f["Invoke()<br/>2907 us"]
-        f --> g["argmax of 2 int8 logits<br/>tie -> class 0"]
-        g --> h["print #RES,idx,true,pred,<br/>latency_us,out0,out1"]
-    end
-    d --> e
-```
+<img src="docs/on_device.svg" alt="On the board: setup once (SHA-256 check, op resolver, interpreter and arena, read scale and zero-point), then per sample quantize, Invoke, argmax, print" width="636">
 
 Because the input quantization on the board uses the same formula and rounding rule as
 the PC (`lrintf` / `np.rint`, both round-half-to-even) and the model bytes are proven
@@ -149,6 +110,7 @@ on the ESP32-S3's native USB-Serial/JTAG port.
                           pc_predictions.csv, pc_summary.json, export_manifest.json,
                           compile_summary.txt, summary.txt
     TUTORIAL.md           step-by-step explanation with the measured numbers
+    docs/                 the two architecture diagrams (SVG)
 
 ## Two findings worth knowing before reusing this
 

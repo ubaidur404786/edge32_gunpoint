@@ -1,0 +1,38 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='636' height='378' viewBox='0 0 636 378' font-family='Segoe UI, Helvetica, Arial, sans-serif' font-size='13'>
+<defs><marker id='a' markerWidth='10' markerHeight='10' refX='9' refY='5' orient='auto'><path d='M0,0 L10,5 L0,10 z' fill='#24292f'/></marker></defs>
+<rect x='16' y='16' width='262' height='346' rx='8' fill='#ffffff' stroke='#d0d7de'/>
+<text x='147.0' y='38' text-anchor='middle' font-weight='bold' fill='#24292f'>Setup, once</text>
+<rect x='32' y='50' width='230' height='54' rx='6' fill='#f6f8fa' stroke='#24292f'/>
+<text x='147.0' y='72' text-anchor='middle' fill='#24292f' font-weight='600'>SHA-256 of model in flash</text>
+<text x='147.0' y='91' text-anchor='middle' fill='#57606a'>== export value, else #ERROR</text>
+<line x1='147.0' y1='104' x2='147.0' y2='127' stroke='#24292f' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='32' y='128' width='230' height='54' rx='6' fill='#f6f8fa' stroke='#24292f'/>
+<text x='147.0' y='150' text-anchor='middle' fill='#24292f' font-weight='600'>op resolver</text>
+<text x='147.0' y='169' text-anchor='middle' fill='#57606a'>5 op types registered</text>
+<line x1='147.0' y1='182' x2='147.0' y2='205' stroke='#24292f' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='32' y='206' width='230' height='54' rx='6' fill='#f6f8fa' stroke='#24292f'/>
+<text x='147.0' y='228' text-anchor='middle' fill='#24292f' font-weight='600'>interpreter + tensor arena</text>
+<text x='147.0' y='247' text-anchor='middle' fill='#57606a'>3404 of 32768 bytes used</text>
+<line x1='147.0' y1='260' x2='147.0' y2='283' stroke='#24292f' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='32' y='284' width='230' height='54' rx='6' fill='#f6f8fa' stroke='#24292f'/>
+<text x='147.0' y='306' text-anchor='middle' fill='#24292f' font-weight='600'>read scale / zero-point</text>
+<text x='147.0' y='325' text-anchor='middle' fill='#57606a'>from the model, never hard-coded</text>
+<rect x='358' y='16' width='262' height='346' rx='8' fill='#ffffff' stroke='#d0d7de'/>
+<text x='489.0' y='38' text-anchor='middle' font-weight='bold' fill='#24292f'>Per sample, x 150</text>
+<rect x='374' y='50' width='230' height='54' rx='6' fill='#f6f8fa' stroke='#24292f'/>
+<text x='489.0' y='72' text-anchor='middle' fill='#24292f' font-weight='600'>quantize 150 floats</text>
+<text x='489.0' y='91' text-anchor='middle' fill='#57606a'>lrintf(x / scale) + zero_point</text>
+<line x1='489.0' y1='104' x2='489.0' y2='127' stroke='#24292f' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='374' y='128' width='230' height='54' rx='6' fill='#f6f8fa' stroke='#24292f'/>
+<text x='489.0' y='150' text-anchor='middle' fill='#24292f' font-weight='600'>Invoke()</text>
+<text x='489.0' y='169' text-anchor='middle' fill='#57606a'>timed: mean 2907 us</text>
+<line x1='489.0' y1='182' x2='489.0' y2='205' stroke='#24292f' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='374' y='206' width='230' height='54' rx='6' fill='#f6f8fa' stroke='#24292f'/>
+<text x='489.0' y='228' text-anchor='middle' fill='#24292f' font-weight='600'>argmax of 2 int8 logits</text>
+<text x='489.0' y='247' text-anchor='middle' fill='#57606a'>tie -&gt; class 0</text>
+<line x1='489.0' y1='260' x2='489.0' y2='283' stroke='#24292f' stroke-width='1.5' marker-end='url(#a)'/>
+<rect x='374' y='284' width='230' height='54' rx='6' fill='#f6f8fa' stroke='#24292f'/>
+<text x='489.0' y='306' text-anchor='middle' fill='#24292f' font-weight='600'>print #RES line</text>
+<text x='489.0' y='325' text-anchor='middle' fill='#57606a'>idx,true,pred,latency,out0,out1</text>
+<polyline points='262,311.0 318.0,311.0 318.0,77.0 373,77.0' fill='none' stroke='#24292f' stroke-width='1.5' marker-end='url(#a)'/>
+</svg>
