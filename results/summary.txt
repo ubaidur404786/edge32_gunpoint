@@ -1,0 +1,38 @@
+edge32_gunpoint - board vs PC comparison
+log: logs\run_full.txt   (block 1 of 1 complete, 1 started)
+
+integrity checks
+  [OK] sha256 board == export       a0614175d59c0851f5ec9ccd9ef7c474643ffe1c5a54abb22afb565290695631 vs a0614175d59c0851f5ec9ccd9ef7c474643ffe1c5a54abb22afb565290695631
+  [OK] model_len == export          6496 vs 6496
+  [OK] n_samples == export          150 vs 150
+  [OK] #RES count == n_samples      150 vs 150
+  [OK] series_length == export      150 vs 150
+  [OK] input scale/zp == PC         0.0173435211/9 vs 0.017343521118164062/9
+  [OK] output scale/zp == PC        0.0410037786/8 vs 0.04100377857685089/8
+
+accuracy on the official TEST split
+  PyTorch FP32 (PC)      : 0.7733
+  TFLite  FP32 (PC)      : 0.7733
+  TFLite  INT8 (PC)      : 0.7733
+  TFLite  INT8 (board)   : 0.7733  (116/150)   board's own #SUMMARY: 0.7733 (116/150)
+
+board vs PC, sample by sample
+  samples compared               : 150
+  prediction agreement           : 150/150
+  raw int8 output agreement      : 150/150   (both logits identical)
+  max |board - PC| raw int8 diff : 0
+  true-label mismatches (export bug if > 0): 0
+
+latency (Invoke() only, after warm-up, from #RES lines)
+  mean 2907.4 us, median 2908.0 us, min 2812 us, max 2928 us   (board #LATENCY: mean 2907.4, min 2812, max 2928)
+
+memory and size
+  model_int8.tflite               : 6496 bytes
+  tensor arena used / size        : 3404 / 32768 bytes
+  heap size / free heap (board)   : 360560 / 323356 bytes
+  sketch size (board)             : 443312 bytes, free sketch space 1310720 bytes
+  chip / cpu / psram              : ESP32-S3 / 240 MHz / 0 bytes
+  flash (compile summary)         : 443169 bytes (33%) of 1310720
+  static RAM (compile summary)    : 56552 bytes (17%) of 327680
+
+VERDICT: PASS - board reproduces the PC INT8 model bit for bit

@@ -1,0 +1,17 @@
+{
+  "n_test": 150,
+  "input_scale": 0.017343521118164062,
+  "input_zero_point": 9,
+  "output_scale": 0.04100377857685089,
+  "output_zero_point": 8,
+  "acc_pytorch_fp32": 0.7733333333333333,
+  "acc_tflite_fp32": 0.7733333333333333,
+  "acc_tflite_int8": 0.7733333333333333,
+  "agree_pt_fp32": 150,
+  "agree_fp32_int8": 150,
+  "agree_pt_int8": 150,
+  "max_abs_diff_pt_fp32": 2.86102294921875e-06,
+  "max_abs_diff_fp32_int8deq": 1.3782086372375488,
+  "int8_output_ties": 1,
+  "model_int8_bytes": 6496
+}
