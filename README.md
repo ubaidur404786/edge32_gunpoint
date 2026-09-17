@@ -25,30 +25,32 @@ purpose of the project is the correctness of the path from PyTorch to the microc
 
 ## Architecture: from the dataset to the ESP32-S3
 
-Every box is one script or one artifact of this repository; every number was measured.
+Three columns, left to right: train on the PC, convert and verify on the PC, deploy and prove on the board. Every box is one script or one artifact of this repository; every number was measured.
 
 ```mermaid
-flowchart TD
-    A["data/GunPoint/*.tsv<br/>TRAIN 50 x 150, TEST 150 x 150, already z-normalized"]
-    B["src/dataset.py<br/>labels 1,2 -> 0,1; stratified split: 40 train / 10 val"]
-    C["src/model.py<br/>GunPointCNN: Conv1d(1,8,3)-ReLU-MaxPool(2)-Conv1d(8,16,3)-ReLU-MaxPool(2)-Linear(576,2)<br/>1586 parameters"]
-    D["src/train.py<br/>Adam, CrossEntropyLoss, early stopping on val loss (best epoch 77)<br/>TEST evaluated once: 0.7733"]
-    E["models/model_fp32.pt"]
-    F["torch.onnx.export (dynamo, opset 18)<br/>models/model.onnx"]
-    G["onnx2tf 2.6.9 (tf_converter backend)<br/>models/saved_model/  (NCL -> NLC layout change)"]
-    H["tf.lite.TFLiteConverter<br/>models/model_fp32.tflite, 10092 bytes"]
-    I["tf.lite.TFLiteConverter + representative dataset (40 train rows)<br/>int8 in/out, per-tensor dense<br/>models/model_int8.tflite, 6496 bytes"]
-    J["src/pc_inference.py<br/>all 150 TEST samples through PyTorch FP32 / TFLite FP32 / TFLite INT8 (reference kernels)<br/>results/pc_predictions.csv"]
-    K["src/export_arduino.py<br/>model_data.h (bytes + SHA-256), test_data.h (150 samples as float)"]
-    L["arduino-cli compile / upload<br/>firmware/gunpoint_tflm, 443169 bytes flash, 56552 bytes RAM"]
-    M["ESP32-S3 running TensorFlow Lite Micro<br/>serial log: #META #DEVICE #ARENA #QUANT #RES x150 #SUMMARY #LATENCY #MEMORY #END<br/>logs/run_full.txt"]
-    N["src/compare.py<br/>board vs PC, sample by sample<br/>results/summary.txt: 150/150 predictions, 150/150 raw int8 logits - PASS"]
-
-    A --> B --> C --> D --> E --> F --> G
-    G --> H --> J
-    G --> I --> J
-    I --> K --> L --> M --> N
-    J --> N
+flowchart LR
+    subgraph P1["1. Train  (PC, PyTorch)"]
+        direction TB
+        A["GunPoint TSV<br/>50 train / 150 test"] --> B["dataset.py<br/>split 40 / 10"]
+        B --> C["model.py<br/>CNN, 1586 params"]
+        C --> D["train.py<br/>TEST once: 0.7733"]
+        D --> E["model_fp32.pt"]
+    end
+    subgraph P2["2. Convert and verify  (PC, TFLite)"]
+        direction TB
+        F["ONNX -> onnx2tf<br/>SavedModel"] --> G["model_fp32.tflite<br/>10092 B"]
+        G --> H["model_int8.tflite<br/>6496 B, int8 in/out"]
+        H --> I["pc_inference.py<br/>pc_predictions.csv"]
+    end
+    subgraph P3["3. Deploy and prove  (ESP32-S3)"]
+        direction TB
+        J["export_arduino.py<br/>model_data.h, test_data.h"] --> K["arduino-cli<br/>compile / upload"]
+        K --> L["TFLM on ESP32-S3<br/>logs/run_full.txt"]
+        L --> M["compare.py<br/>150/150 - PASS"]
+    end
+    E --> F
+    H --> J
+    I --> M
 ```
 
 ### What happens on the ESP32-S3
@@ -59,13 +61,19 @@ Micro runtime from the Chirale_TensorFLowLite 2.0.0 Arduino library.
 
 ```mermaid
 flowchart LR
-    S1["boot / ENTER received"] --> S2["SHA-256 of g_model in flash<br/>== value from export? else #ERROR"]
-    S2 --> S3["MicroMutableOpResolver&lt;5&gt;<br/>Reshape, Conv2D, MaxPool2D,<br/>Transpose, FullyConnected"]
-    S3 --> S4["MicroInterpreter over a 32 KB tensor arena<br/>AllocateTensors(): 3404 bytes used"]
-    S4 --> S5["read input/output scale and zero-point<br/>from the model (never hard-coded)"]
-    S5 --> S6["for each sample:<br/>q = lrintf(x / scale) + zero_point, clipped to int8<br/>copy 150 values into the input tensor"]
-    S6 --> S7["Invoke()  (timed: mean 2907 us)"]
-    S7 --> S8["read 2 raw int8 logits<br/>argmax (tie -> class 0)<br/>print #RES,idx,true,pred,latency_us,out0,out1"]
+    subgraph S["Setup, once"]
+        direction TB
+        a["SHA-256 of model in flash<br/>== export? else #ERROR"] --> b["op resolver<br/>5 op types"]
+        b --> c["interpreter + arena<br/>3404 B used"]
+        c --> d["read scale / zero-point<br/>from the model"]
+    end
+    subgraph R["Per sample, x 150"]
+        direction TB
+        e["quantize floats<br/>lrintf(x / scale) + zp"] --> f["Invoke()<br/>2907 us"]
+        f --> g["argmax of 2 int8 logits<br/>tie -> class 0"]
+        g --> h["print #RES,idx,true,pred,<br/>latency_us,out0,out1"]
+    end
+    d --> e
 ```
 
 Because the input quantization on the board uses the same formula and rounding rule as
